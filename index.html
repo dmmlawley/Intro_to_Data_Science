@@ -201,10 +201,11 @@
       border-radius: 18px;
     }
 
-    .chart-shell svg {
+    .chart-shell img {
       width: 100%;
       height: 100%;
       display: block;
+      object-fit: contain;
     }
 
     .chart-axis,
@@ -367,7 +368,7 @@
     <section class="panel">
       <h2>Interactive investigation workspace</h2>
       <div class="workspace-grid">
-        <aside class="controls">
+        <form class="controls" onsubmit="return false;">
           <div>
             <label for="datasetSelect">1. Choose a dataset</label>
             <select id="datasetSelect" aria-describedby="datasetDescription"></select>
@@ -407,7 +408,7 @@
             <label for="yFieldSelect">Y-axis field</label>
             <select id="yFieldSelect"></select>
           </div>
-        </aside>
+        </form>
 
         <div>
           <div class="summary-grid" id="summaryGrid"></div>
@@ -444,7 +445,7 @@
 
           <div class="code-block mt-1">
             <h3>Equivalent Python, Pandas and Seaborn workflow</h3>
-            <pre id="pythonCode"></pre>
+            <pre><code id="pythonCode"></code></pre>
           </div>
         </div>
       </div>
@@ -589,6 +590,7 @@
 
     Object.values(datasets).forEach(dataset => {
       dataset.serializedRows = JSON.stringify(dataset.rows, null, 2);
+      dataset.serializedRowsLiteral = JSON.stringify(dataset.serializedRows);
     });
 
     const ui = {
@@ -604,6 +606,7 @@
       xFieldSelect: document.getElementById("xFieldSelect"),
       yFieldSelect: document.getElementById("yFieldSelect"),
       summaryGrid: document.getElementById("summaryGrid"),
+      chartCanvas: document.getElementById("chartCanvas"),
       chartNote: document.getElementById("chartNote"),
       chartStatus: document.getElementById("chartStatus"),
       findingText: document.getElementById("findingText"),
@@ -697,13 +700,14 @@
       const sortField = ui.sortSelect.value;
       const focusField = chartType === "histogram" ? xField : yField;
       const comparisonField = chartType === "histogram" ? yField : xField;
+      const chartModel = buildChartModel(filteredRows, chartType, xField, yField);
 
       ui.rangeMeta.textContent = dataset.thresholdMode === "atMost"
         ? `Showing rows where ${prettyLabel(dataset.thresholdField)} is at most ${ui.rangeInput.value}.`
         : `Showing rows where ${prettyLabel(dataset.thresholdField)} is at least ${ui.rangeInput.value}.`;
 
       renderSummary(dataset, filteredRows, focusField, comparisonField);
-      renderChart(dataset, filteredRows, chartType, xField, yField);
+      renderChart(chartModel, chartType, xField, yField);
       renderInsights(dataset, filteredRows, question, chartType, xField, yField);
       renderTable(dataset, filteredRows, sortField);
       renderPythonCode(dataset, question, chartType, xField, yField);
@@ -761,30 +765,19 @@
       ui.summaryGrid.innerHTML = markup;
     }
 
-    function renderChart(dataset, rows, chartType, xField, yField) {
-      const chartHost = document.getElementById("chartCanvas");
-      chartHost.innerHTML = "";
+    function renderChart(chartModel, chartType, xField, yField) {
+      ui.chartCanvas.replaceChildren();
 
-      if (!rows.length) {
-        chartHost.innerHTML = emptyChartSvg("No chart yet because no rows match the current filter.");
+      if (chartModel.empty) {
+        ui.chartCanvas.replaceChildren(createChartImage(chartModel.markup, chartModel.status));
         ui.chartNote.innerHTML = `<span class="warning">No chart yet:</span> change the filter or threshold to bring rows back into view.`;
-        ui.chartStatus.textContent = "No chart yet. Change the filter or threshold to bring rows back into view.";
+        ui.chartStatus.textContent = chartModel.status;
         return;
       }
 
-      if (chartType === "bar") {
-        const grouped = groupMeans(rows, xField, yField);
-        chartHost.innerHTML = renderBarChartSvg(grouped.labels, grouped.values, `${prettyLabel(xField)}`, `Average ${prettyLabel(yField)}`);
-      } else if (chartType === "histogram") {
-        const bins = histogramBins(rows.map(row => Number(row[xField])).filter(Number.isFinite));
-        chartHost.innerHTML = renderHistogramSvg(bins.labels, bins.values, `${prettyLabel(xField)} range`, "Frequency");
-      } else {
-        const points = numericPairs(rows, xField, yField);
-        chartHost.innerHTML = renderScatterSvg(points, prettyLabel(xField), prettyLabel(yField));
-      }
-
+      ui.chartCanvas.replaceChildren(createChartImage(chartModel.markup, chartModel.status));
       ui.chartNote.textContent = chartInterpretation(chartType, xField, yField);
-      ui.chartStatus.textContent = chartAccessibleSummary(rows, chartType, xField, yField);
+      ui.chartStatus.textContent = chartModel.status;
     }
 
     function renderInsights(dataset, rows, question, chartType, xField, yField) {
@@ -849,7 +842,7 @@
         ? `filtered = df[df["${thresholdField}"] ${filterOperator} ${threshold}]`
         : `filtered = df[(df["${dataset.groupField}"] == "${selectedGroup}") & (df["${thresholdField}"] ${filterOperator} ${threshold})]`;
 
-      ui.pythonCode.textContent = `import json\nimport numpy as np\nimport pandas as pd\nimport seaborn as sns\nimport matplotlib.pyplot as plt\n\n# Challenge question\n# ${question.label}\n# Full built-in dataset generated by the app\nraw_data = json.loads('''${dataset.serializedRows}''')\ndf = pd.DataFrame(raw_data)\n${filterLine}\n\nsummary = filtered["${safeSummaryField}"].describe()\nsorted_rows = filtered.sort_values("${ui.sortSelect.value}", ascending=False).head(12)\n\nprint(summary)\nprint(sorted_rows)\n\nplt.figure(figsize=(10, 6))\n${chartLine}\nplt.title("${dataset.name}")\nplt.tight_layout()\nplt.show()`;
+      ui.pythonCode.textContent = `import json\nimport numpy as np\nimport pandas as pd\nimport seaborn as sns\nimport matplotlib.pyplot as plt\n\n# Challenge question\n# ${question.label}\n# Full built-in dataset generated by the app\nraw_data = json.loads(${dataset.serializedRowsLiteral})\ndf = pd.DataFrame(raw_data)\n${filterLine}\n\nsummary = filtered["${safeSummaryField}"].describe()\nsorted_rows = filtered.sort_values("${ui.sortSelect.value}", ascending=False).head(12)\n\nprint(summary)\nprint(sorted_rows)\n\nplt.figure(figsize=(10, 6))\n${chartLine}\nplt.title("${dataset.name}")\nplt.tight_layout()\nplt.show()`;
     }
 
     function currentDataset() {
@@ -942,21 +935,40 @@
       return `The current scatter plot shows a correlation of ${correlation.toFixed(2)} between ${prettyLabel(xField)} and ${prettyLabel(yField)}. Pupils should decide whether that looks weak, moderate, or strong and whether another factor might explain it.`;
     }
 
-    function chartAccessibleSummary(rows, chartType, xField, yField) {
+    function buildChartModel(rows, chartType, xField, yField) {
+      if (!rows.length) {
+        return {
+          empty: true,
+          markup: emptyChartSvg("No chart yet because no rows match the current filter."),
+          status: "No chart yet. Change the filter or threshold to bring rows back into view."
+        };
+      }
       if (chartType === "bar") {
         const grouped = groupMeans(rows, xField, yField);
-        return `Bar chart updated. ${grouped.labels.map((label, index) => `${label}: ${grouped.values[index].toFixed(1)}`).join("; ")}.`;
+        return {
+          empty: false,
+          markup: renderBarChartSvg(grouped.labels, grouped.values, `${prettyLabel(xField)}`, `Average ${prettyLabel(yField)}`),
+          status: `Bar chart updated. ${grouped.labels.map((label, index) => `${label}: ${grouped.values[index].toFixed(1)}`).join("; ")}.`
+        };
       }
       if (chartType === "histogram") {
         const bins = histogramBins(rows.map(row => Number(row[xField])).filter(Number.isFinite));
-        return `Histogram updated. ${bins.labels.map((label, index) => `${label}: ${bins.values[index]} rows`).join("; ")}.`;
+        return {
+          empty: false,
+          markup: renderHistogramSvg(bins.labels, bins.values, `${prettyLabel(xField)} range`, "Frequency"),
+          status: `Histogram updated. ${bins.labels.map((label, index) => `${label}: ${bins.values[index]} rows`).join("; ")}.`
+        };
       }
       const pairs = numericPairs(rows, xField, yField);
       const correlation = correlationCoefficient(
         pairs.map(pair => pair.x),
         pairs.map(pair => pair.y)
       );
-      return `Scatter plot updated with ${pairs.length} points comparing ${prettyLabel(xField)} and ${prettyLabel(yField)}. ${correlation === null ? "" : `Correlation ${correlation.toFixed(2)}.`}`.trim();
+      return {
+        empty: false,
+        markup: renderScatterSvg(pairs, prettyLabel(xField), prettyLabel(yField)),
+        status: `Scatter plot updated with ${pairs.length} points comparing ${prettyLabel(xField)} and ${prettyLabel(yField)}. ${correlation === null ? "" : `Correlation ${correlation.toFixed(2)}.`}`.trim()
+      };
     }
 
     function prettyLabel(value) {
@@ -1153,6 +1165,13 @@
           <text class="chart-label" x="360" y="180" text-anchor="middle">${escapeHtml(message)}</text>
         </svg>
       `;
+    }
+
+    function createChartImage(markup, altText) {
+      const image = document.createElement("img");
+      image.alt = altText;
+      image.src = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(markup)}`;
+      return image;
     }
 
     function scaleValue(value, min, max, size) {

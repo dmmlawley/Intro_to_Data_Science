@@ -1,5 +1,6 @@
 const fs = require('fs');
 const path = require('path');
+const vm = require('vm');
 
 const html = fs.readFileSync(path.join(__dirname, '..', 'index.html'), 'utf8');
 const match = html.match(/<script>\s*([\s\S]*)\s*<\/script>\s*<\/body>/);
@@ -18,6 +19,7 @@ class FakeElement {
     this.step = '';
     this.listeners = {};
     this.options = [];
+    this.children = [];
   }
 
   set innerHTML(value) {
@@ -42,9 +44,14 @@ class FakeElement {
   addEventListener(type, handler) {
     this.listeners[type] = handler;
   }
+
+  replaceChildren(...children) {
+    this.children = children;
+    this._innerHTML = children.map(child => child.src || '').join('');
+  }
 }
 
-global.Option = function Option(text, value) {
+const Option = function Option(text, value) {
   return { text, value };
 };
 
@@ -59,13 +66,16 @@ elements.chartTypeSelect.add(new Option('Bar chart', 'bar'));
 elements.chartTypeSelect.add(new Option('Histogram', 'histogram'));
 elements.chartTypeSelect.add(new Option('Scatter plot', 'scatter'));
 
-global.document = {
+const document = {
   getElementById(id) {
     return elements[id];
+  },
+  createElement(tagName) {
+    return { tagName, alt: '', src: '' };
   }
 };
 
-eval(match[1]);
+vm.runInNewContext(match[1], { document, Option, console, encodeURIComponent });
 
 function assert(condition, message) {
   if (!condition) {
@@ -89,5 +99,14 @@ elements.chartTypeSelect.listeners.change();
 assert(elements.xFieldSelect.value === 'town', 'bar chart should normalize x-axis back to category field');
 assert(/Bar chart updated/i.test(elements.chartStatus.textContent), 'bar chart update should refresh status text');
 assert(/sns\.barplot/.test(elements.pythonCode.textContent), 'python snippet should include barplot example');
+
+elements.chartTypeSelect.value = 'histogram';
+elements.chartTypeSelect.listeners.change();
+assert(/Histogram updated/i.test(elements.chartStatus.textContent), 'histogram mode should refresh status text');
+
+elements.filterSelect.value = 'Greener Streets';
+elements.rangeInput.value = String(Number(elements.rangeInput.min) - 1);
+elements.rangeInput.listeners.input();
+assert(/No chart yet/i.test(elements.chartStatus.textContent), 'empty state should announce no chart');
 
 console.log('app-controls.test.js passed');
