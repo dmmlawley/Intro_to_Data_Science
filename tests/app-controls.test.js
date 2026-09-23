@@ -103,6 +103,12 @@ assert(/sns\.barplot/.test(elements.pythonCode.textContent), 'python snippet sho
 elements.chartTypeSelect.value = 'histogram';
 elements.chartTypeSelect.listeners.change();
 assert(/Histogram updated/i.test(elements.chartStatus.textContent), 'histogram mode should refresh status text');
+assert(/sns\.histplot/.test(elements.pythonCode.textContent), 'python snippet should include histogram example');
+
+elements.chartTypeSelect.value = 'scatter';
+elements.chartTypeSelect.listeners.change();
+assert(/Scatter plot updated/i.test(elements.chartStatus.textContent), 'scatter mode should refresh status text');
+assert(/sns\.scatterplot/.test(elements.pythonCode.textContent), 'python snippet should include scatter example');
 
 elements.filterSelect.value = 'Greener Streets';
 elements.rangeInput.value = String(Number(elements.rangeInput.min) - 1);

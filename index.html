@@ -770,7 +770,7 @@
 
       if (chartModel.empty) {
         ui.chartCanvas.replaceChildren(createChartImage(chartModel.markup, chartModel.status));
-        ui.chartNote.innerHTML = `<span class="warning">No chart yet:</span> change the filter or threshold to bring rows back into view.`;
+        ui.chartNote.textContent = "No chart yet: change the filter or threshold to bring rows back into view.";
         ui.chartStatus.textContent = chartModel.status;
         return;
       }
@@ -960,14 +960,22 @@
         };
       }
       const pairs = numericPairs(rows, xField, yField);
+      if (!pairs.length) {
+        return {
+          empty: true,
+          markup: emptyChartSvg("No scatter plot is available because the selected fields do not produce numeric pairs."),
+          status: "No scatter plot is available because the selected fields do not produce numeric pairs."
+        };
+      }
       const correlation = correlationCoefficient(
         pairs.map(pair => pair.x),
         pairs.map(pair => pair.y)
       );
+      const samplePoints = pairs.slice(0, 5).map(pair => `(${pair.x.toFixed(1)}, ${pair.y.toFixed(1)})`).join("; ");
       return {
         empty: false,
         markup: renderScatterSvg(pairs, prettyLabel(xField), prettyLabel(yField)),
-        status: `Scatter plot updated with ${pairs.length} points comparing ${prettyLabel(xField)} and ${prettyLabel(yField)}. ${correlation === null ? "" : `Correlation ${correlation.toFixed(2)}.`}`.trim()
+        status: `Scatter plot updated with ${pairs.length} points comparing ${prettyLabel(xField)} and ${prettyLabel(yField)}. Example points: ${samplePoints}.${correlation === null ? "" : ` Correlation ${correlation.toFixed(2)}.`}`.trim()
       };
     }
 
@@ -1124,7 +1132,8 @@
       }).join("");
       const xRangeLabel = `${xTitle}: ${minX.toFixed(1)} to ${maxX.toFixed(1)}`;
       const yRangeLabel = `${yTitle}: ${minY.toFixed(1)} to ${maxY.toFixed(1)}`;
-      return baseChartSvg(width, height, padding, `Scatter plot of ${yTitle} against ${xTitle}`, xRangeLabel, yRangeLabel, `Scatter plot showing ${yTitle} against ${xTitle} with ${points.length} points. X ranges from ${minX.toFixed(1)} to ${maxX.toFixed(1)} and Y ranges from ${minY.toFixed(1)} to ${maxY.toFixed(1)}.${correlation === null ? "" : ` Correlation ${correlation.toFixed(2)}.`}`, dots);
+      const samplePoints = points.slice(0, 5).map(point => `(${point.x.toFixed(1)}, ${point.y.toFixed(1)})`).join("; ");
+      return baseChartSvg(width, height, padding, `Scatter plot of ${yTitle} against ${xTitle}`, xRangeLabel, yRangeLabel, `Scatter plot showing ${yTitle} against ${xTitle} with ${points.length} points. X ranges from ${minX.toFixed(1)} to ${maxX.toFixed(1)} and Y ranges from ${minY.toFixed(1)} to ${maxY.toFixed(1)}. Example points: ${samplePoints}.${correlation === null ? "" : ` Correlation ${correlation.toFixed(2)}.`}`, dots);
     }
 
     function baseChartSvg(width, height, padding, titleText, xTitle, yTitle, description, content) {
