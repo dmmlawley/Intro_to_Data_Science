@@ -370,12 +370,12 @@
         <aside class="controls">
           <div>
             <label for="datasetSelect">1. Choose a dataset</label>
-            <select id="datasetSelect"></select>
+            <select id="datasetSelect" aria-describedby="datasetDescription"></select>
             <p id="datasetDescription" class="small-note"></p>
           </div>
           <div>
             <label for="questionSelect">2. Pick a challenge question</label>
-            <select id="questionSelect"></select>
+            <select id="questionSelect" aria-describedby="questionGuidance"></select>
             <p id="questionGuidance" class="small-note"></p>
           </div>
           <div>
@@ -607,6 +607,8 @@
       pythonCode: document.getElementById("pythonCode")
     };
 
+    let chartSequence = 0;
+
     initialise();
 
     function initialise() {
@@ -620,8 +622,9 @@
       });
       ui.questionSelect.addEventListener("change", applyQuestionDefaults);
       ui.questionSelect.addEventListener("change", render);
-      [ui.filterSelect, ui.rangeInput, ui.sortSelect, ui.chartTypeSelect, ui.xFieldSelect, ui.yFieldSelect]
-        .forEach(control => control.addEventListener("input", render));
+      [ui.filterSelect, ui.sortSelect, ui.chartTypeSelect, ui.xFieldSelect, ui.yFieldSelect]
+        .forEach(control => control.addEventListener("change", render));
+      ui.rangeInput.addEventListener("input", render);
 
       syncDatasetControls();
       render();
@@ -685,10 +688,12 @@
       const yField = ui.yFieldSelect.value;
       const chartType = ui.chartTypeSelect.value;
       const sortField = ui.sortSelect.value;
+      const focusField = chartType === "histogram" ? xField : yField;
+      const comparisonField = chartType === "histogram" ? yField : xField;
 
       ui.rangeMeta.textContent = `Showing rows where ${prettyLabel(dataset.thresholdField)} is at least ${ui.rangeInput.value}.`;
 
-      renderSummary(dataset, filteredRows, yField, xField);
+      renderSummary(dataset, filteredRows, focusField, comparisonField);
       renderChart(dataset, filteredRows, chartType, xField, yField);
       renderInsights(dataset, filteredRows, question, chartType, xField, yField);
       renderTable(dataset, filteredRows, sortField);
@@ -745,7 +750,7 @@
 
       if (!rows.length) {
         ui.chartNote.innerHTML = `<span class="warning">No chart yet:</span> change the filter or threshold to bring rows back into view.`;
-        ui.chartStatus.textContent = "Chart cleared because no rows match the current filter.";
+        ui.chartStatus.textContent = "No chart yet. Change the filter or threshold to bring rows back into view.";
         return;
       }
 
@@ -815,7 +820,7 @@
       const threshold = ui.rangeInput.value;
       const summaryField = chartType === "histogram" ? xField : yField;
       const safeSummaryField = isNumericField(dataset, summaryField) ? summaryField : dataset.defaultY;
-      const sampleData = JSON.stringify(dataset.rows.slice(0, 8), null, 2);
+      const sampleData = JSON.stringify(dataset.rows, null, 2);
       const chartLine = chartType === "bar"
         ? `sns.barplot(data=filtered, x="${xField}", y="${yField}", estimator=np.mean)`
         : chartType === "histogram"
@@ -1013,7 +1018,7 @@
           <text class="chart-label" x="${x + barWidth / 2}" y="${height - 44}" text-anchor="middle">${escapeHtml(label)}</text>
         `;
       }).join("");
-      return baseChartSvg(width, height, padding, xTitle, yTitle, bars);
+      return baseChartSvg(width, height, padding, xTitle, yTitle, `Bar chart comparing average ${yTitle} across ${xTitle}.`, bars);
     }
 
     function renderHistogramSvg(labels, values, xTitle, yTitle) {
@@ -1036,10 +1041,10 @@
         return `
           <rect class="chart-bin" x="${x}" y="${y}" width="${barWidth}" height="${scaledHeight}" rx="6" />
           <text class="chart-value" x="${x + barWidth / 2}" y="${y - 8}" text-anchor="middle">${value}</text>
-          <text class="chart-label" x="${x + barWidth / 2}" y="${height - 44}" text-anchor="middle">${escapeHtml(label)}</text>
+          <text class="chart-label" x="${x + barWidth / 2}" y="${height - 40}" text-anchor="end" transform="rotate(-35 ${x + barWidth / 2} ${height - 40})">${escapeHtml(label)}</text>
         `;
       }).join("");
-      return baseChartSvg(width, height, padding, xTitle, yTitle, bars);
+      return baseChartSvg(width, height, padding, xTitle, yTitle, `Histogram showing the distribution of ${xTitle}.`, bars);
     }
 
     function renderScatterSvg(points, xTitle, yTitle) {
@@ -1064,21 +1069,25 @@
       }).join("");
       const xRangeLabel = `${xTitle}: ${minX.toFixed(1)} to ${maxX.toFixed(1)}`;
       const yRangeLabel = `${yTitle}: ${minY.toFixed(1)} to ${maxY.toFixed(1)}`;
-      return baseChartSvg(width, height, padding, xRangeLabel, yRangeLabel, dots);
+      return baseChartSvg(width, height, padding, xRangeLabel, yRangeLabel, `Scatter plot showing ${yTitle} against ${xTitle}.`, dots);
     }
 
-    function baseChartSvg(width, height, padding, xTitle, yTitle, content) {
+    function baseChartSvg(width, height, padding, xTitle, yTitle, description, content) {
       const bottom = height - padding.bottom;
       const left = padding.left;
       const right = width - padding.right;
       const top = padding.top;
+      chartSequence += 1;
+      const titleId = `chart-title-${chartSequence}`;
+      const descId = `chart-desc-${chartSequence}`;
       const grid = [0.25, 0.5, 0.75].map(step => {
         const y = top + (bottom - top) * step;
         return `<line class="chart-grid" x1="${left}" y1="${y}" x2="${right}" y2="${y}" />`;
       }).join("");
       return `
-        <svg viewBox="0 0 ${width} ${height}" role="img">
-          <title>${escapeHtml(`${xTitle} against ${yTitle}`)}</title>
+        <svg viewBox="0 0 ${width} ${height}" role="img" aria-labelledby="${titleId} ${descId}">
+          <title id="${titleId}">${escapeHtml(`${xTitle} against ${yTitle}`)}</title>
+          <desc id="${descId}">${escapeHtml(description)}</desc>
           <line class="chart-axis" x1="${left}" y1="${bottom}" x2="${right}" y2="${bottom}" />
           <line class="chart-axis" x1="${left}" y1="${top}" x2="${left}" y2="${bottom}" />
           ${grid}
@@ -1090,9 +1099,13 @@
     }
 
     function emptyChartSvg(message) {
+      chartSequence += 1;
+      const titleId = `chart-title-${chartSequence}`;
+      const descId = `chart-desc-${chartSequence}`;
       return `
-        <svg viewBox="0 0 720 360" role="img">
-          <title>${escapeHtml(message)}</title>
+        <svg viewBox="0 0 720 360" role="img" aria-labelledby="${titleId} ${descId}">
+          <title id="${titleId}">${escapeHtml(message)}</title>
+          <desc id="${descId}">${escapeHtml(message)}</desc>
           <rect x="0" y="0" width="720" height="360" fill="#f7faff" rx="18"></rect>
           <text class="chart-label" x="360" y="180" text-anchor="middle">${escapeHtml(message)}</text>
         </svg>
