@@ -1,0 +1,1284 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Exploring Data with Python and Pandas</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --bg: #f5f7fb;
+      --surface: #ffffff;
+      --surface-alt: #edf3ff;
+      --border: #d8e0ef;
+      --text: #1f2a44;
+      --muted: #5b6782;
+      --accent: #2855d9;
+      --accent-soft: #dbe5ff;
+      --success: #1f8f5f;
+      --warning: #b26b00;
+      --shadow: 0 16px 40px rgba(31, 42, 68, 0.08);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      font-family: Inter, Arial, sans-serif;
+      background: linear-gradient(180deg, #eef4ff 0%, var(--bg) 38%, #fbfcff 100%);
+      color: var(--text);
+      line-height: 1.5;
+    }
+
+    main {
+      width: min(1180px, calc(100% - 2rem));
+      margin: 0 auto;
+      padding: 2rem 0 3rem;
+    }
+
+    .hero,
+    .panel,
+    .summary-card,
+    .lesson-card,
+    .insight-card,
+    .peer-card,
+    .code-block {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      box-shadow: var(--shadow);
+    }
+
+    .hero {
+      padding: 2rem;
+      display: grid;
+      gap: 1.5rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .eyebrow {
+      display: inline-block;
+      padding: 0.35rem 0.75rem;
+      border-radius: 999px;
+      background: var(--accent-soft);
+      color: var(--accent);
+      font-weight: 700;
+      font-size: 0.85rem;
+      letter-spacing: 0.02em;
+    }
+
+    h1, h2, h3, h4, p {
+      margin-top: 0;
+    }
+
+    .hero-grid,
+    .lesson-grid,
+    .workspace-grid,
+    .summary-grid,
+    .insight-grid,
+    .peer-grid {
+      display: grid;
+      gap: 1rem;
+    }
+
+    .hero-grid,
+    .lesson-grid {
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    }
+
+    .workspace-grid {
+      grid-template-columns: minmax(310px, 380px) minmax(0, 1fr);
+      align-items: start;
+    }
+
+    .summary-grid,
+    .insight-grid,
+    .peer-grid {
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    }
+
+    .hero ul,
+    .lesson-card ul,
+    .peer-card ul {
+      padding-left: 1.1rem;
+      margin: 0;
+    }
+
+    .lesson-card,
+    .panel,
+    .summary-card,
+    .insight-card,
+    .peer-card,
+    .code-block {
+      padding: 1.25rem;
+    }
+
+    .panel {
+      margin-top: 1.5rem;
+    }
+
+    .panel-tight {
+      padding: 1rem;
+    }
+
+    .mt-1 {
+      margin-top: 1rem;
+    }
+
+    .mt-150 {
+      margin-top: 1.5rem;
+    }
+
+    .controls {
+      display: grid;
+      gap: 1rem;
+    }
+
+    label {
+      display: block;
+      font-weight: 700;
+      margin-bottom: 0.35rem;
+    }
+
+    select,
+    input[type="range"] {
+      width: 100%;
+      padding: 0.7rem 0.9rem;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      background: #fff;
+      color: var(--text);
+      font: inherit;
+    }
+
+    input[type="range"] {
+      padding: 0;
+    }
+
+    .range-meta,
+    .small-note,
+    .chart-note,
+    .table-caption,
+    .stat-label {
+      color: var(--muted);
+      font-size: 0.92rem;
+    }
+
+    .summary-card strong {
+      display: block;
+      font-size: 1.75rem;
+      margin-bottom: 0.25rem;
+    }
+
+    .summary-card.good strong,
+    .accent {
+      color: var(--success);
+    }
+
+    .pill-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.6rem;
+      margin-bottom: 1rem;
+    }
+
+    .pill {
+      background: var(--surface-alt);
+      color: var(--accent);
+      padding: 0.35rem 0.75rem;
+      border-radius: 999px;
+      font-weight: 700;
+      font-size: 0.82rem;
+    }
+
+    .chart-shell {
+      height: 420px;
+      padding: 1rem;
+      background: linear-gradient(180deg, #ffffff 0%, #f7faff 100%);
+      border: 1px solid var(--border);
+      border-radius: 18px;
+    }
+
+    .chart-shell img {
+      width: 100%;
+      height: 100%;
+      display: block;
+      object-fit: contain;
+    }
+
+    .chart-axis,
+    .chart-grid {
+      stroke: #cfd7e6;
+      stroke-width: 1;
+    }
+
+    .chart-grid {
+      stroke-dasharray: 4 6;
+    }
+
+    .chart-label {
+      fill: var(--muted);
+      font-size: 12px;
+    }
+
+    .chart-value {
+      fill: var(--text);
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    .chart-bar {
+      fill: rgba(40, 85, 217, 0.75);
+    }
+
+    .chart-bin {
+      fill: rgba(31, 143, 95, 0.72);
+    }
+
+    .chart-point {
+      fill: rgba(178, 107, 0, 0.85);
+    }
+
+    .table-wrap {
+      overflow: auto;
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      margin-top: 1rem;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      min-width: 700px;
+      background: #fff;
+    }
+
+    th,
+    td {
+      padding: 0.75rem;
+      border-bottom: 1px solid var(--border);
+      text-align: left;
+      font-size: 0.94rem;
+    }
+
+    th {
+      background: #f7faff;
+      position: sticky;
+      top: 0;
+      z-index: 1;
+    }
+
+    code,
+    pre {
+      font-family: "SFMono-Regular", Consolas, Monaco, monospace;
+    }
+
+    pre {
+      margin: 0;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+
+    .warning {
+      color: var(--warning);
+      font-weight: 700;
+    }
+
+    .empty {
+      padding: 1rem;
+      border-radius: 14px;
+      background: #fff7ea;
+      border: 1px solid #f2d9a6;
+      color: #7a5200;
+    }
+
+    @media (max-width: 900px) {
+      .workspace-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <section class="hero">
+      <div>
+        <span class="eyebrow">Weeks 2-3 · Interactive Data Science Studio</span>
+        <h1>Explore real datasets with Python, Pandas and Seaborn thinking</h1>
+        <p>
+          This classroom-ready web app gives 16-18 year olds an interactive route into data science. Students choose a dataset,
+          filter and sort records, review summary statistics, create visualisations, and critique how charts can support or mislead conclusions.
+        </p>
+      </div>
+      <div class="hero-grid">
+        <div>
+          <h3>Week 2 focus</h3>
+          <ul>
+            <li>Import and explore datasets using Pandas ideas</li>
+            <li>Filter, sort and summarise data</li>
+            <li>Use descriptive statistics to answer research questions</li>
+          </ul>
+        </div>
+        <div>
+          <h3>Week 3 focus</h3>
+          <ul>
+            <li>Select bar charts, histograms and scatter plots</li>
+            <li>Spot trends, outliers and correlations</li>
+            <li>Evaluate whether a visualisation is fair or misleading</li>
+          </ul>
+        </div>
+        <div>
+          <h3>How pupils use it</h3>
+          <ul>
+            <li>Pick a dataset that interests them</li>
+            <li>Investigate a challenge question</li>
+            <li>Support conclusions with stats and charts</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <section class="lesson-grid">
+      <article class="lesson-card">
+        <h2>Week 2 · Exploring data with Pandas</h2>
+        <p>Students work as data investigators rather than coders first. Each control in the workspace mirrors a common Pandas action.</p>
+        <div class="pill-row">
+          <span class="pill">Load data</span>
+          <span class="pill">Filter rows</span>
+          <span class="pill">Sort columns</span>
+          <span class="pill">Describe values</span>
+        </div>
+        <p class="small-note">Manual spreadsheet route: repeated filters, formulas and pivot tables. Python route: a small number of reusable Pandas commands.</p>
+      </article>
+      <article class="lesson-card">
+        <h2>Week 3 · Visualising patterns with Seaborn</h2>
+        <p>Students test the same question with multiple chart types, then explain which visualisation best communicates the evidence.</p>
+        <div class="pill-row">
+          <span class="pill">Bar chart</span>
+          <span class="pill">Histogram</span>
+          <span class="pill">Scatter plot</span>
+          <span class="pill">Peer review</span>
+        </div>
+        <p class="small-note">The generated chart notes highlight bias risks such as hidden spread, chosen bins, and confusing correlation with causation.</p>
+      </article>
+    </section>
+
+    <section class="panel">
+      <h2>Interactive investigation workspace</h2>
+      <div class="workspace-grid">
+        <form class="controls" onsubmit="return false;">
+          <div>
+            <label for="datasetSelect">1. Choose a dataset</label>
+            <select id="datasetSelect" aria-describedby="datasetDescription"></select>
+            <p id="datasetDescription" class="small-note"></p>
+          </div>
+          <div>
+            <label for="questionSelect">2. Pick a challenge question</label>
+            <select id="questionSelect" aria-describedby="questionGuidance"></select>
+            <p id="questionGuidance" class="small-note"></p>
+          </div>
+          <div>
+            <label for="filterSelect">3. Focus on a group</label>
+            <select id="filterSelect"></select>
+          </div>
+          <div>
+            <label for="rangeInput">4. Raise the evidence threshold</label>
+            <input id="rangeInput" type="range" min="0" max="100" step="1" />
+            <p id="rangeMeta" class="range-meta"></p>
+          </div>
+          <div>
+            <label for="sortSelect">5. Sort the table</label>
+            <select id="sortSelect"></select>
+          </div>
+          <div>
+            <label for="chartTypeSelect">6. Choose a chart</label>
+            <select id="chartTypeSelect">
+              <option value="bar">Bar chart</option>
+              <option value="histogram">Histogram</option>
+              <option value="scatter">Scatter plot</option>
+            </select>
+          </div>
+          <div>
+            <label for="xFieldSelect">X-axis field</label>
+            <select id="xFieldSelect"></select>
+          </div>
+          <div>
+            <label for="yFieldSelect">Y-axis field</label>
+            <select id="yFieldSelect"></select>
+          </div>
+        </form>
+
+        <div>
+          <div class="summary-grid" id="summaryGrid"></div>
+
+          <div class="panel panel-tight mt-1">
+            <h3>Chart and interpretation</h3>
+            <div class="chart-shell">
+              <div id="chartCanvas"></div>
+            </div>
+            <p id="chartNote" class="chart-note"></p>
+            <p id="chartStatus" class="small-note" aria-live="polite" aria-atomic="true"></p>
+          </div>
+
+          <div class="insight-grid mt-1">
+            <article class="insight-card">
+              <h3>Findings to discuss</h3>
+              <p id="findingText"></p>
+            </article>
+            <article class="insight-card">
+              <h3>Spreadsheet vs Python</h3>
+              <p id="comparisonText"></p>
+            </article>
+            <article class="insight-card">
+              <h3>Potential misdirection</h3>
+              <p id="misleadingText"></p>
+            </article>
+          </div>
+
+          <div class="panel mt-1">
+            <h3>Filtered data preview</h3>
+            <p id="tableCaption" class="table-caption"></p>
+            <div id="tableHost" class="table-wrap"></div>
+          </div>
+
+          <div class="code-block mt-1">
+            <h3>Equivalent Python, Pandas and Seaborn workflow</h3>
+            <pre><code id="pythonCode"></code></pre>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="peer-grid mt-150">
+      <article class="peer-card">
+        <h2>Outcome evidence</h2>
+        <ul>
+          <li>Summary statistics ready to support initial findings</li>
+          <li>Annotated chart ready for discussion or export</li>
+          <li>Challenge question tied to a real-world context</li>
+        </ul>
+      </article>
+      <article class="peer-card">
+        <h2>Peer review prompts</h2>
+        <ul>
+          <li>Which filter choice changed the conclusion most?</li>
+          <li>Does the chart show the spread fairly, or hide important variation?</li>
+          <li>What extra data would make the conclusion stronger?</li>
+        </ul>
+      </article>
+      <article class="peer-card">
+        <h2>Teacher extension ideas</h2>
+        <ul>
+          <li>Extend the generated datasets into a CSV-backed version later</li>
+          <li>Ask students to justify why their selected chart is appropriate</li>
+          <li>Move from the visual workflow into live Python notebooks afterwards</li>
+        </ul>
+      </article>
+    </section>
+  </main>
+
+  <script>
+    const datasets = {
+      achievement: {
+        name: "College achievement and wellbeing",
+        description: "96 records comparing attendance, study habits and coursework across subjects, campuses and half terms.",
+        categoryField: "subject",
+        groupField: "campus",
+        thresholdField: "attendance_pct",
+        thresholdMode: "atLeast",
+        numericFields: ["attendance_pct", "study_hours", "coursework_score", "wellbeing_score", "sleep_hours"],
+        defaultX: "study_hours",
+        defaultY: "coursework_score",
+        rows: buildAchievementRows(),
+        questions: [
+          {
+            label: "Does more study time appear to improve coursework scores?",
+            guidance: "Use the scatter plot to compare study hours and coursework score, then check whether any campus behaves differently.",
+            chartType: "scatter",
+            xField: "study_hours",
+            yField: "coursework_score"
+          },
+          {
+            label: "Which subject keeps the highest average attendance?",
+            guidance: "Use a bar chart to compare mean attendance between subjects after filtering by campus.",
+            chartType: "bar",
+            xField: "subject",
+            yField: "attendance_pct"
+          },
+          {
+            label: "Where are the outliers in student wellbeing?",
+            guidance: "Use the histogram to inspect how wellbeing scores cluster and whether the tail suggests outliers.",
+            chartType: "histogram",
+            xField: "wellbeing_score",
+            yField: "coursework_score"
+          }
+        ]
+      },
+      climate: {
+        name: "Town transport and air quality",
+        description: "144 records tracking monthly weather, cycling, bus use and air quality across six towns.",
+        categoryField: "town",
+        groupField: "policy",
+        thresholdField: "air_quality_index",
+        thresholdMode: "atMost",
+        numericFields: ["air_quality_index", "cycle_journeys", "bus_journeys", "rainfall_mm", "avg_temp_c"],
+        defaultX: "cycle_journeys",
+        defaultY: "air_quality_index",
+        rows: buildClimateRows(),
+        questions: [
+          {
+            label: "Do towns with more cycling tend to have cleaner air?",
+            guidance: "Use a scatter plot to compare cycle journeys with air quality index. Lower air-quality values are better here.",
+            chartType: "scatter",
+            xField: "cycle_journeys",
+            yField: "air_quality_index"
+          },
+          {
+            label: "Which town has the highest average bus use?",
+            guidance: "Use a bar chart to compare mean bus journeys across towns and notice whether policy choice changes the ranking.",
+            chartType: "bar",
+            xField: "town",
+            yField: "bus_journeys"
+          },
+          {
+            label: "Are there unusual months for rainfall?",
+            guidance: "Use the histogram to inspect rainfall distribution and spot months that sit far away from the centre.",
+            chartType: "histogram",
+            xField: "rainfall_mm",
+            yField: "air_quality_index"
+          }
+        ]
+      },
+      clubs: {
+        name: "Student clubs, confidence and project success",
+        description: "120 records showing how participation links to confidence, attendance and final project scores.",
+        categoryField: "club",
+        groupField: "year_group",
+        thresholdField: "project_score",
+        thresholdMode: "atLeast",
+        numericFields: ["project_score", "participation_rate", "confidence_score", "attendance_pct", "sessions_attended"],
+        defaultX: "participation_rate",
+        defaultY: "project_score",
+        rows: buildClubRows(),
+        questions: [
+          {
+            label: "Does participation rate connect with stronger project scores?",
+            guidance: "Use the scatter plot to compare participation rate against project score and then test whether different year groups cluster.",
+            chartType: "scatter",
+            xField: "participation_rate",
+            yField: "project_score"
+          },
+          {
+            label: "Which club has the highest average confidence score?",
+            guidance: "Use a bar chart to compare the mean confidence score for each club.",
+            chartType: "bar",
+            xField: "club",
+            yField: "confidence_score"
+          },
+          {
+            label: "Are there outlier project scores that deserve investigation?",
+            guidance: "Use the histogram to check where project scores cluster and where unusual cases appear.",
+            chartType: "histogram",
+            xField: "project_score",
+            yField: "confidence_score"
+          }
+        ]
+      }
+    };
+
+    Object.values(datasets).forEach(dataset => {
+      dataset.serializedRows = JSON.stringify(dataset.rows, null, 2);
+      dataset.serializedRowsLiteral = JSON.stringify(dataset.serializedRows);
+    });
+
+    const ui = {
+      datasetSelect: document.getElementById("datasetSelect"),
+      datasetDescription: document.getElementById("datasetDescription"),
+      questionSelect: document.getElementById("questionSelect"),
+      questionGuidance: document.getElementById("questionGuidance"),
+      filterSelect: document.getElementById("filterSelect"),
+      rangeInput: document.getElementById("rangeInput"),
+      rangeMeta: document.getElementById("rangeMeta"),
+      sortSelect: document.getElementById("sortSelect"),
+      chartTypeSelect: document.getElementById("chartTypeSelect"),
+      xFieldSelect: document.getElementById("xFieldSelect"),
+      yFieldSelect: document.getElementById("yFieldSelect"),
+      summaryGrid: document.getElementById("summaryGrid"),
+      chartCanvas: document.getElementById("chartCanvas"),
+      chartNote: document.getElementById("chartNote"),
+      chartStatus: document.getElementById("chartStatus"),
+      findingText: document.getElementById("findingText"),
+      comparisonText: document.getElementById("comparisonText"),
+      misleadingText: document.getElementById("misleadingText"),
+      tableCaption: document.getElementById("tableCaption"),
+      tableHost: document.getElementById("tableHost"),
+      pythonCode: document.getElementById("pythonCode")
+    };
+
+    let chartSequence = 0;
+
+    initialise();
+
+    function initialise() {
+      Object.entries(datasets).forEach(([key, dataset]) => {
+        ui.datasetSelect.add(new Option(dataset.name, key));
+      });
+
+      ui.datasetSelect.addEventListener("change", () => {
+        syncDatasetControls();
+        render();
+      });
+      ui.questionSelect.addEventListener("change", applyQuestionDefaults);
+      ui.questionSelect.addEventListener("change", render);
+      [ui.filterSelect, ui.sortSelect, ui.chartTypeSelect, ui.xFieldSelect, ui.yFieldSelect]
+        .forEach(control => control.addEventListener("change", render));
+      ui.rangeInput.addEventListener("input", render);
+
+      syncDatasetControls();
+      render();
+    }
+
+    function syncDatasetControls() {
+      const dataset = currentDataset();
+      ui.datasetDescription.textContent = dataset.description;
+
+      ui.questionSelect.innerHTML = "";
+      dataset.questions.forEach((question, index) => {
+        ui.questionSelect.add(new Option(question.label, String(index)));
+      });
+
+      ui.filterSelect.innerHTML = "";
+      ui.filterSelect.add(new Option(`All ${prettyLabel(dataset.groupField)} groups`, "all"));
+      uniqueValues(dataset.rows, dataset.groupField).forEach(value => {
+        ui.filterSelect.add(new Option(value, value));
+      });
+
+      ui.sortSelect.innerHTML = "";
+      dataset.numericFields.forEach(field => {
+        ui.sortSelect.add(new Option(`${prettyLabel(field)} (high to low)`, field));
+      });
+
+      [ui.xFieldSelect, ui.yFieldSelect].forEach(select => {
+        select.innerHTML = "";
+      });
+      ui.xFieldSelect.add(new Option(prettyLabel(dataset.categoryField), dataset.categoryField));
+      dataset.numericFields.forEach(field => {
+        ui.xFieldSelect.add(new Option(prettyLabel(field), field));
+        ui.yFieldSelect.add(new Option(prettyLabel(field), field));
+      });
+
+      const thresholdValues = dataset.rows.map(row => row[dataset.thresholdField]);
+      const min = Math.floor(Math.min(...thresholdValues));
+      const max = Math.ceil(Math.max(...thresholdValues));
+      const defaultValue = Math.round((min + max) / 2);
+      ui.rangeInput.min = String(min);
+      ui.rangeInput.max = String(max);
+      ui.rangeInput.step = "1";
+      ui.rangeInput.value = String(defaultValue);
+      applyQuestionDefaults();
+    }
+
+    function applyQuestionDefaults() {
+      const dataset = currentDataset();
+      const question = dataset.questions[Number(ui.questionSelect.value || 0)];
+      ui.questionGuidance.textContent = question.guidance;
+      ui.chartTypeSelect.value = question.chartType;
+      setSelectValue(ui.xFieldSelect, question.xField);
+      setSelectValue(ui.yFieldSelect, question.yField);
+    }
+
+    function render() {
+      const dataset = currentDataset();
+      normaliseAxisSelection(dataset);
+      const filteredRows = getFilteredRows(dataset);
+      const question = dataset.questions[Number(ui.questionSelect.value || 0)];
+      const xField = ui.xFieldSelect.value;
+      const yField = ui.yFieldSelect.value;
+      const chartType = ui.chartTypeSelect.value;
+      const sortField = ui.sortSelect.value;
+      const focusField = chartType === "histogram" ? xField : yField;
+      const comparisonField = chartType === "histogram" ? yField : xField;
+      const chartModel = buildChartModel(filteredRows, chartType, xField, yField);
+
+      ui.rangeMeta.textContent = dataset.thresholdMode === "atMost"
+        ? `Showing rows where ${prettyLabel(dataset.thresholdField)} is at most ${ui.rangeInput.value}.`
+        : `Showing rows where ${prettyLabel(dataset.thresholdField)} is at least ${ui.rangeInput.value}.`;
+
+      renderSummary(dataset, filteredRows, focusField, comparisonField);
+      renderChart(chartModel, chartType, xField, yField);
+      renderInsights(dataset, filteredRows, question, chartType, xField, yField);
+      renderTable(dataset, filteredRows, sortField);
+      renderPythonCode(dataset, question, chartType, xField, yField);
+    }
+
+    function normaliseAxisSelection(dataset) {
+      const chartType = ui.chartTypeSelect.value;
+      if (chartType === "bar" && ui.xFieldSelect.value !== dataset.categoryField) {
+        setSelectValue(ui.xFieldSelect, dataset.categoryField);
+      }
+      if ((chartType === "scatter" || chartType === "histogram") && !isNumericField(dataset, ui.xFieldSelect.value)) {
+        setSelectValue(ui.xFieldSelect, dataset.defaultX);
+      }
+      if (!isNumericField(dataset, ui.yFieldSelect.value)) {
+        setSelectValue(ui.yFieldSelect, dataset.defaultY);
+      }
+    }
+
+    function getFilteredRows(dataset) {
+      const selectedGroup = ui.filterSelect.value;
+      const threshold = Number(ui.rangeInput.value);
+      return dataset.rows.filter(row => {
+        const matchesGroup = selectedGroup === "all" || row[dataset.groupField] === selectedGroup;
+        const meetsThreshold = dataset.thresholdMode === "atMost"
+          ? Number(row[dataset.thresholdField]) <= threshold
+          : Number(row[dataset.thresholdField]) >= threshold;
+        return matchesGroup && meetsThreshold;
+      });
+    }
+
+    function renderSummary(dataset, rows, focusField, comparisonField) {
+      let markup = `<div class="empty">No rows match the current filter. Lower the threshold or choose a different group.</div>`;
+      if (!rows.length) {
+        ui.summaryGrid.innerHTML = markup;
+        return;
+      }
+
+      const focusValues = rows.map(row => Number(row[focusField])).filter(Number.isFinite);
+      const pairs = numericPairs(rows, comparisonField, focusField);
+      const hasFocusValues = focusValues.length > 0;
+      const correlation = isNumericField(dataset, focusField) && isNumericField(dataset, comparisonField)
+        ? correlationCoefficient(
+            pairs.map(pair => pair.x),
+            pairs.map(pair => pair.y)
+          )
+        : null;
+      const cards = [
+        summaryCard("Rows remaining", rows.length, `${dataset.rows.length} in full dataset`),
+        summaryCard(`Mean ${prettyLabel(focusField)}`, hasFocusValues ? average(focusValues).toFixed(1) : "N/A", hasFocusValues ? "Useful for first conclusions" : "Choose a numeric focus field"),
+        summaryCard(`Median ${prettyLabel(focusField)}`, hasFocusValues ? median(focusValues).toFixed(1) : "N/A", hasFocusValues ? "Less affected by extreme values" : "Choose a numeric focus field"),
+        summaryCard(`Highest ${prettyLabel(focusField)}`, hasFocusValues ? Math.max(...focusValues).toFixed(1) : "N/A", hasFocusValues ? "Look back at the table for this case" : "Choose a numeric focus field"),
+        summaryCard("Correlation", correlation === null ? "N/A" : correlation.toFixed(2), correlation === null ? "Choose two numeric fields to compare" : "Closer to ±1 suggests a stronger linear pattern")
+      ];
+      markup = cards.join("");
+      ui.summaryGrid.innerHTML = markup;
+    }
+
+    function renderChart(chartModel, chartType, xField, yField) {
+      ui.chartCanvas.replaceChildren();
+
+      if (chartModel.empty) {
+        ui.chartCanvas.replaceChildren(createChartImage(chartModel.markup, chartModel.status));
+        ui.chartNote.textContent = "No chart yet: change the filter or threshold to bring rows back into view.";
+        ui.chartStatus.textContent = chartModel.status;
+        return;
+      }
+
+      ui.chartCanvas.replaceChildren(createChartImage(chartModel.markup, chartModel.status));
+      ui.chartNote.textContent = chartInterpretation(chartType, xField, yField);
+      ui.chartStatus.textContent = chartModel.status;
+    }
+
+    function renderInsights(dataset, rows, question, chartType, xField, yField) {
+      if (!rows.length) {
+        ui.findingText.textContent = "No finding yet because the current filters remove every row.";
+        ui.comparisonText.textContent = "A spreadsheet would also struggle here; reduce the filters and compare again.";
+        ui.misleadingText.textContent = "Empty views can accidentally imply nothing is happening in the data.";
+        return;
+      }
+
+      const pairs = numericPairs(rows, xField, yField);
+      const yIsNumeric = isNumericField(dataset, yField);
+      const corr = isNumericField(dataset, xField) && isNumericField(dataset, yField)
+        ? correlationCoefficient(
+            pairs.map(pair => pair.x),
+            pairs.map(pair => pair.y)
+          )
+        : null;
+
+      ui.findingText.textContent = buildFindingText(rows, chartType, xField, yField, corr, yIsNumeric);
+      ui.comparisonText.textContent = `Students can get this answer by filtering ${rows.length} rows and scanning the table, then compare that with the Pandas code below. This makes the efficiency gain of code-driven analysis visible without making coding the first barrier.`;
+      ui.misleadingText.textContent = misleadingPrompt(chartType, xField, yField);
+    }
+
+    function renderTable(dataset, rows, sortField) {
+      if (!rows.length) {
+        ui.tableCaption.textContent = "0 rows shown.";
+        ui.tableHost.innerHTML = `<div class="empty">No rows match the current settings.</div>`;
+        return;
+      }
+
+      const sortedRows = [...rows].sort((a, b) => Number(b[sortField]) - Number(a[sortField]));
+      const sampleRows = sortedRows.slice(0, 12);
+      const columns = Object.keys(sampleRows[0]);
+      ui.tableCaption.textContent = `Showing the top 12 rows out of ${rows.length}, sorted by ${prettyLabel(sortField)}.`;
+      ui.tableHost.innerHTML = `
+        <table>
+          <thead>
+            <tr>${columns.map(column => `<th scope="col">${escapeHtml(prettyLabel(column))}</th>`).join("")}</tr>
+          </thead>
+          <tbody>
+            ${sampleRows.map(row => `<tr>${columns.map(column => `<td>${escapeHtml(String(formatValue(row[column])))}</td>`).join("")}</tr>`).join("")}
+          </tbody>
+        </table>
+      `;
+    }
+
+    function renderPythonCode(dataset, question, chartType, xField, yField) {
+      const selectedGroup = ui.filterSelect.value;
+      const thresholdField = dataset.thresholdField;
+      const threshold = ui.rangeInput.value;
+      const safeYField = chartType === "bar" && !isNumericField(dataset, yField) ? dataset.defaultY : yField;
+      const summaryField = chartType === "histogram" ? xField : safeYField;
+      const safeSummaryField = isNumericField(dataset, summaryField) ? summaryField : dataset.defaultY;
+      const filterOperator = dataset.thresholdMode === "atMost" ? "<=" : ">=";
+      const chartLine = chartType === "bar"
+        ? `sns.barplot(data=filtered, x="${xField}", y="${safeYField}", estimator=np.mean)`
+        : chartType === "histogram"
+          ? `sns.histplot(data=filtered, x="${xField}", bins=8)`
+          : `sns.scatterplot(data=filtered, x="${xField}", y="${yField}", hue="${dataset.groupField}")`;
+      const filterLine = selectedGroup === "all"
+        ? `filtered = df[df["${thresholdField}"] ${filterOperator} ${threshold}]`
+        : `filtered = df[(df["${dataset.groupField}"] == "${selectedGroup}") & (df["${thresholdField}"] ${filterOperator} ${threshold})]`;
+
+      ui.pythonCode.textContent = `import json\nimport numpy as np\nimport pandas as pd\nimport seaborn as sns\nimport matplotlib.pyplot as plt\n\n# Challenge question\n# ${question.label}\n# Full built-in dataset generated by the app\nraw_data = json.loads(${dataset.serializedRowsLiteral})\ndf = pd.DataFrame(raw_data)\n${filterLine}\n\nsummary = filtered["${safeSummaryField}"].describe()\nsorted_rows = filtered.sort_values("${ui.sortSelect.value}", ascending=False).head(12)\n\nprint(summary)\nprint(sorted_rows)\n\nplt.figure(figsize=(10, 6))\n${chartLine}\nplt.title("${dataset.name}")\nplt.tight_layout()\nplt.show()`;
+    }
+
+    function currentDataset() {
+      return datasets[ui.datasetSelect.value || Object.keys(datasets)[0]];
+    }
+
+    function summaryCard(title, value, meta) {
+      return `<article class="summary-card"><span class="stat-label">${title}</span><strong>${value}</strong><span class="small-note">${meta}</span></article>`;
+    }
+
+    function groupMeans(rows, groupField, valueField) {
+      const map = new Map();
+      rows.forEach(row => {
+        const key = row[groupField];
+        const value = Number(row[valueField]);
+        if (!Number.isFinite(value)) return;
+        if (!map.has(key)) {
+          map.set(key, []);
+        }
+        map.get(key).push(value);
+      });
+      const labels = Array.from(map.keys());
+      const values = labels.map(label => average(map.get(label)));
+      return { labels, values };
+    }
+
+    function histogramBins(values) {
+      if (!values.length) {
+        return { labels: [], values: [] };
+      }
+      const min = Math.min(...values);
+      const max = Math.max(...values);
+      const binCount = Math.min(8, Math.max(4, Math.round(Math.sqrt(values.length))));
+      const width = (max - min || 1) / binCount;
+      const counts = new Array(binCount).fill(0);
+      values.forEach(value => {
+        const index = Math.min(binCount - 1, Math.floor((value - min) / width));
+        counts[index] += 1;
+      });
+      const labels = counts.map((_, index) => {
+        const start = min + width * index;
+        const end = start + width;
+        return `${start.toFixed(0)}-${end.toFixed(0)}`;
+      });
+      return { labels, values: counts };
+    }
+
+    function chartInterpretation(chartType, xField, yField) {
+      if (chartType === "bar") {
+        return `Bar charts compare average ${prettyLabel(yField)} across ${prettyLabel(xField)} groups clearly, but they can hide the spread inside each group.`;
+      }
+      if (chartType === "histogram") {
+        return `Histograms reveal clusters and outliers in ${prettyLabel(xField)}, but the chosen bins can change the story the chart appears to tell.`;
+      }
+      return `Scatter plots reveal possible relationships between ${prettyLabel(xField)} and ${prettyLabel(yField)}, but a pattern does not automatically prove causation.`;
+    }
+
+    function misleadingPrompt(chartType, xField, yField) {
+      if (chartType === "bar") {
+        return `If one ${prettyLabel(xField)} group has only a few rows, its average ${prettyLabel(yField)} may look dramatic even when the evidence is thin.`;
+      }
+      if (chartType === "histogram") {
+        return `Changing the bin size could make ${prettyLabel(xField)} look smooth or lumpy. Ask whether the chosen bins are fair.`;
+      }
+      return `A scatter plot can suggest that ${prettyLabel(xField)} causes ${prettyLabel(yField)}, but other hidden factors may explain the pattern.`;
+    }
+
+    function topAverageGroup(rows, field, valueField) {
+      const grouped = groupMeans(rows, field, valueField);
+      const pairs = grouped.labels.map((label, index) => ({ label, value: grouped.values[index] }));
+      return pairs.sort((a, b) => b.value - a.value)[0] || { label: "No group", value: 0 };
+    }
+
+    function buildFindingText(rows, chartType, xField, yField, correlation, yIsNumeric) {
+      if (!yIsNumeric) {
+        return `The current Y-axis field is categorical, so pupils should compare categories through counts and the filtered table rather than averages.`;
+      }
+      if (chartType === "bar") {
+        const topGroup = topAverageGroup(rows, xField, yField);
+        return `${topGroup.label} has the strongest average ${prettyLabel(yField)} at ${topGroup.value.toFixed(1)} in the current filtered view.`;
+      }
+      if (chartType === "histogram") {
+        const bins = histogramBins(rows.map(row => Number(row[xField])).filter(Number.isFinite));
+        const topBinIndex = bins.values.indexOf(Math.max(...bins.values));
+        return `${prettyLabel(xField)} clusters most heavily in the ${bins.labels[topBinIndex]} range, so pupils should test whether that concentration changes after filtering.`;
+      }
+      if (correlation === null) {
+        return `Use the filtered scatter plot and table to compare ${prettyLabel(xField)} with ${prettyLabel(yField)} across individual rows.`;
+      }
+      return `The current scatter plot shows a correlation of ${correlation.toFixed(2)} between ${prettyLabel(xField)} and ${prettyLabel(yField)}. Pupils should decide whether that looks weak, moderate, or strong and whether another factor might explain it.`;
+    }
+
+    function buildChartModel(rows, chartType, xField, yField) {
+      if (!rows.length) {
+        return {
+          empty: true,
+          markup: emptyChartSvg("No chart yet because no rows match the current filter."),
+          status: "No chart yet. Change the filter or threshold to bring rows back into view."
+        };
+      }
+      if (chartType === "bar") {
+        const grouped = groupMeans(rows, xField, yField);
+        return {
+          empty: false,
+          markup: renderBarChartSvg(grouped.labels, grouped.values, `${prettyLabel(xField)}`, `Average ${prettyLabel(yField)}`),
+          status: `Bar chart updated. ${grouped.labels.map((label, index) => `${label}: ${grouped.values[index].toFixed(1)}`).join("; ")}.`
+        };
+      }
+      if (chartType === "histogram") {
+        const bins = histogramBins(rows.map(row => Number(row[xField])).filter(Number.isFinite));
+        return {
+          empty: false,
+          markup: renderHistogramSvg(bins.labels, bins.values, `${prettyLabel(xField)} range`, "Frequency"),
+          status: `Histogram updated. ${bins.labels.map((label, index) => `${label}: ${bins.values[index]} rows`).join("; ")}.`
+        };
+      }
+      const pairs = numericPairs(rows, xField, yField);
+      if (!pairs.length) {
+        return {
+          empty: true,
+          markup: emptyChartSvg("No scatter plot is available because the selected fields do not produce numeric pairs."),
+          status: "No scatter plot is available because the selected fields do not produce numeric pairs."
+        };
+      }
+      const correlation = correlationCoefficient(
+        pairs.map(pair => pair.x),
+        pairs.map(pair => pair.y)
+      );
+      const samplePoints = pairs.slice(0, 5).map(pair => `(${pair.x.toFixed(1)}, ${pair.y.toFixed(1)})`).join("; ");
+      return {
+        empty: false,
+        markup: renderScatterSvg(pairs, prettyLabel(xField), prettyLabel(yField)),
+        status: `Scatter plot updated with ${pairs.length} points comparing ${prettyLabel(xField)} and ${prettyLabel(yField)}. Example points: ${samplePoints}.${correlation === null ? "" : ` Correlation ${correlation.toFixed(2)}.`}`.trim()
+      };
+    }
+
+    function prettyLabel(value) {
+      return value.replace(/_/g, " ").replace(/\b\w/g, letter => letter.toUpperCase());
+    }
+
+    function uniqueValues(rows, field) {
+      return [...new Set(rows.map(row => row[field]))];
+    }
+
+    function setSelectValue(select, value) {
+      if ([...select.options].some(option => option.value === value)) {
+        select.value = value;
+      }
+    }
+
+    function average(values) {
+      return values.reduce((total, value) => total + value, 0) / (values.length || 1);
+    }
+
+    function median(values) {
+      const sorted = [...values].sort((a, b) => a - b);
+      const midpoint = Math.floor(sorted.length / 2);
+      return sorted.length % 2 === 0 ? (sorted[midpoint - 1] + sorted[midpoint]) / 2 : sorted[midpoint];
+    }
+
+    function correlationCoefficient(xValues, yValues) {
+      if (xValues.length !== yValues.length || xValues.length < 2) {
+        return null;
+      }
+      const xMean = average(xValues);
+      const yMean = average(yValues);
+      let numerator = 0;
+      let xSpread = 0;
+      let ySpread = 0;
+      for (let index = 0; index < xValues.length; index += 1) {
+        const xDiff = xValues[index] - xMean;
+        const yDiff = yValues[index] - yMean;
+        numerator += xDiff * yDiff;
+        xSpread += xDiff ** 2;
+        ySpread += yDiff ** 2;
+      }
+      const denominator = Math.sqrt(xSpread * ySpread);
+      return denominator ? numerator / denominator : null;
+    }
+
+    function numericPairs(rows, xField, yField) {
+      return rows.reduce((pairs, row) => {
+        const x = Number(row[xField]);
+        const y = Number(row[yField]);
+        if (Number.isFinite(x) && Number.isFinite(y)) {
+          pairs.push({ x, y });
+        }
+        return pairs;
+      }, []);
+    }
+
+    function isNumericField(dataset, field) {
+      return dataset.numericFields.includes(field);
+    }
+
+    function formatValue(value) {
+      return typeof value === "number" ? value.toFixed(1).replace(/\.0$/, "") : value;
+    }
+
+    function escapeHtml(value) {
+      return value
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll("\"", "&quot;")
+        .replaceAll("'", "&#39;");
+    }
+
+    function renderBarChartSvg(labels, values, xTitle, yTitle) {
+      if (!labels.length) {
+        return emptyChartSvg("No bar chart data available.");
+      }
+      const width = 720;
+      const height = 360;
+      const padding = { top: 24, right: 24, bottom: 108, left: 54 };
+      const chartWidth = width - padding.left - padding.right;
+      const chartHeight = height - padding.top - padding.bottom;
+      const scale = valueScale(values, chartHeight, padding.top);
+      const step = chartWidth / labels.length;
+      const barWidth = step * 0.72;
+      const bars = labels.map((label, index) => {
+        const value = values[index];
+        const x = padding.left + index * step + step * 0.14;
+        const valueY = scale.toY(value);
+        const y = Math.min(valueY, scale.baselineY);
+        const heightValue = Math.max(1, Math.abs(scale.baselineY - valueY));
+        const labelY = value >= 0 ? y - 8 : y + heightValue + 16;
+        return `
+          <rect class="chart-bar" x="${x}" y="${y}" width="${barWidth}" height="${heightValue}" rx="8" />
+          <text class="chart-value" x="${x + barWidth / 2}" y="${labelY}" text-anchor="middle">${value.toFixed(1)}</text>
+          <text class="chart-label" x="${x + barWidth / 2}" y="${height - 40}" text-anchor="end" transform="rotate(-30 ${x + barWidth / 2} ${height - 40})">${escapeHtml(label)}</text>
+        `;
+      }).join("");
+      const detail = labels.map((label, index) => `${label}: ${values[index].toFixed(1)}`).join("; ");
+      return baseChartSvg(width, height, padding, `Bar chart of average ${yTitle} by ${xTitle}`, xTitle, yTitle, `Bar chart comparing average ${yTitle} across ${xTitle}. Values: ${detail}.`, bars);
+    }
+
+    function renderHistogramSvg(labels, values, xTitle, yTitle) {
+      if (!labels.length) {
+        return emptyChartSvg("No histogram data available.");
+      }
+      const width = 720;
+      const height = 360;
+      const padding = { top: 24, right: 24, bottom: 92, left: 54 };
+      const chartWidth = width - padding.left - padding.right;
+      const chartHeight = height - padding.top - padding.bottom;
+      const scale = valueScale(values, chartHeight, padding.top);
+      const step = chartWidth / labels.length;
+      const barWidth = step * 0.84;
+      const bars = labels.map((label, index) => {
+        const value = values[index];
+        const x = padding.left + index * step + step * 0.08;
+        const valueY = scale.toY(value);
+        const y = Math.min(valueY, scale.baselineY);
+        const heightValue = Math.max(1, Math.abs(scale.baselineY - valueY));
+        const labelY = value >= 0 ? y - 8 : y + heightValue + 16;
+        return `
+          <rect class="chart-bin" x="${x}" y="${y}" width="${barWidth}" height="${heightValue}" rx="6" />
+          <text class="chart-value" x="${x + barWidth / 2}" y="${labelY}" text-anchor="middle">${value}</text>
+          <text class="chart-label" x="${x + barWidth / 2}" y="${height - 40}" text-anchor="end" transform="rotate(-35 ${x + barWidth / 2} ${height - 40})">${escapeHtml(label)}</text>
+        `;
+      }).join("");
+      const detail = labels.map((label, index) => `${label}: ${values[index]}`).join("; ");
+      return baseChartSvg(width, height, padding, `Histogram of ${xTitle}`, xTitle, yTitle, `Histogram showing the distribution of ${xTitle}. Bin counts: ${detail}.`, bars);
+    }
+
+    function renderScatterSvg(points, xTitle, yTitle) {
+      if (!points.length) {
+        return emptyChartSvg("No scatter plot data available.");
+      }
+      const width = 720;
+      const height = 360;
+      const padding = { top: 24, right: 24, bottom: 72, left: 54 };
+      const chartWidth = width - padding.left - padding.right;
+      const chartHeight = height - padding.top - padding.bottom;
+      const xValues = points.map(point => point.x);
+      const yValues = points.map(point => point.y);
+      const minX = Math.min(...xValues);
+      const maxX = Math.max(...xValues);
+      const minY = Math.min(...yValues);
+      const maxY = Math.max(...yValues);
+      const correlation = correlationCoefficient(xValues, yValues);
+      const dots = points.map(point => {
+        const x = padding.left + scaleValue(point.x, minX, maxX, chartWidth);
+        const y = padding.top + chartHeight - scaleValue(point.y, minY, maxY, chartHeight);
+        return `<circle class="chart-point" cx="${x}" cy="${y}" r="5" />`;
+      }).join("");
+      const xRangeLabel = `${xTitle}: ${minX.toFixed(1)} to ${maxX.toFixed(1)}`;
+      const yRangeLabel = `${yTitle}: ${minY.toFixed(1)} to ${maxY.toFixed(1)}`;
+      const samplePoints = points.slice(0, 5).map(point => `(${point.x.toFixed(1)}, ${point.y.toFixed(1)})`).join("; ");
+      return baseChartSvg(width, height, padding, `Scatter plot of ${yTitle} against ${xTitle}`, xRangeLabel, yRangeLabel, `Scatter plot showing ${yTitle} against ${xTitle} with ${points.length} points. X ranges from ${minX.toFixed(1)} to ${maxX.toFixed(1)} and Y ranges from ${minY.toFixed(1)} to ${maxY.toFixed(1)}. Example points: ${samplePoints}.${correlation === null ? "" : ` Correlation ${correlation.toFixed(2)}.`}`, dots);
+    }
+
+    function baseChartSvg(width, height, padding, titleText, xTitle, yTitle, description, content) {
+      const bottom = height - padding.bottom;
+      const left = padding.left;
+      const right = width - padding.right;
+      const top = padding.top;
+      chartSequence += 1;
+      const titleId = `chart-title-${chartSequence}`;
+      const descId = `chart-desc-${chartSequence}`;
+      const grid = [0.25, 0.5, 0.75].map(step => {
+        const y = top + (bottom - top) * step;
+        return `<line class="chart-grid" x1="${left}" y1="${y}" x2="${right}" y2="${y}" />`;
+      }).join("");
+      return `
+        <svg viewBox="0 0 ${width} ${height}" role="img" aria-labelledby="${titleId} ${descId}">
+          <title id="${titleId}">${escapeHtml(titleText)}</title>
+          <desc id="${descId}">${escapeHtml(description)}</desc>
+          <line class="chart-axis" x1="${left}" y1="${bottom}" x2="${right}" y2="${bottom}" />
+          <line class="chart-axis" x1="${left}" y1="${top}" x2="${left}" y2="${bottom}" />
+          ${grid}
+          ${content}
+          <text class="chart-label" x="${(left + right) / 2}" y="${height - 14}" text-anchor="middle">${escapeHtml(xTitle)}</text>
+          <text class="chart-label" x="18" y="${(top + bottom) / 2}" text-anchor="middle" transform="rotate(-90 18 ${(top + bottom) / 2})">${escapeHtml(yTitle)}</text>
+        </svg>
+      `;
+    }
+
+    function emptyChartSvg(message) {
+      chartSequence += 1;
+      const titleId = `chart-title-${chartSequence}`;
+      const descId = `chart-desc-${chartSequence}`;
+      return `
+        <svg viewBox="0 0 720 360" role="img" aria-labelledby="${titleId} ${descId}">
+          <title id="${titleId}">${escapeHtml(message)}</title>
+          <desc id="${descId}">${escapeHtml(message)}</desc>
+          <rect x="0" y="0" width="720" height="360" fill="#f7faff" rx="18"></rect>
+          <text class="chart-label" x="360" y="180" text-anchor="middle">${escapeHtml(message)}</text>
+        </svg>
+      `;
+    }
+
+    function createChartImage(markup, altText) {
+      const image = document.createElement("img");
+      image.alt = altText;
+      image.src = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(markup)}`;
+      return image;
+    }
+
+    function scaleValue(value, min, max, size) {
+      if (min === max) {
+        return size / 2;
+      }
+      return ((value - min) / (max - min)) * size;
+    }
+
+    function valueScale(values, size, offset) {
+      const min = Math.min(0, ...values);
+      const max = Math.max(0, ...values);
+      const range = max - min || 1;
+      return {
+        baselineY: offset + size - ((0 - min) / range) * size,
+        toY(value) {
+          return offset + size - ((value - min) / range) * size;
+        }
+      };
+    }
+
+    function buildAchievementRows() {
+      // Intended pattern: higher study time and later half terms gently raise coursework scores,
+      // while attendance and wellbeing vary by campus and subject to create visible comparisons.
+      const campuses = ["North", "South", "East", "West"];
+      const subjects = ["Biology", "Computing", "Psychology", "Economics", "Sociology", "Media"];
+      const halfTerms = ["HT1", "HT2", "HT3", "HT4"];
+      const rows = [];
+      campuses.forEach((campus, campusIndex) => {
+        subjects.forEach((subject, subjectIndex) => {
+          halfTerms.forEach((halfTerm, halfTermIndex) => {
+            rows.push({
+              campus,
+              subject,
+              half_term: halfTerm,
+              attendance_pct: 82 + campusIndex * 2 + subjectIndex + halfTermIndex * 1.5,
+              study_hours: 4 + subjectIndex * 0.9 + halfTermIndex * 0.7 + campusIndex * 0.4,
+              coursework_score: 58 + subjectIndex * 4 + halfTermIndex * 3 + campusIndex * 2,
+              wellbeing_score: 61 + campusIndex * 2 - subjectIndex * 0.5 + halfTermIndex * 1.2,
+              sleep_hours: 6.2 + ((subjectIndex + halfTermIndex) % 4) * 0.35 + campusIndex * 0.1
+            });
+          });
+        });
+      });
+      return rows;
+    }
+
+    function buildClimateRows() {
+      // Intended pattern: greener policy rows increase cycling and improve air quality,
+      // while monthly weather variation creates seasonal spread for histogram and scatter tasks.
+      const towns = ["Leeds", "Bristol", "Cardiff", "Glasgow", "Norwich", "York"];
+      const policies = ["Standard", "Greener Streets"];
+      const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+      const rows = [];
+      towns.forEach((town, townIndex) => {
+        policies.forEach((policy, policyIndex) => {
+          months.forEach((month, monthIndex) => {
+            rows.push({
+              town,
+              policy,
+              month,
+              avg_temp_c: 5 + monthIndex * 1.5 + townIndex * 0.2,
+              rainfall_mm: 42 + ((monthIndex * 9 + townIndex * 5) % 55),
+              cycle_journeys: 110 + townIndex * 18 + monthIndex * 12 + policyIndex * 48,
+              bus_journeys: 220 + townIndex * 20 + ((monthIndex + 2) % 6) * 16 + policyIndex * 22,
+              air_quality_index: 58 - policyIndex * 8 - townIndex * 2 + ((monthIndex + 3) % 5) * 2
+            });
+          });
+        });
+      });
+      return rows;
+    }
+
+    function buildClubRows() {
+      // Intended pattern: stronger participation raises confidence and project scores over cycles,
+      // with year-group differences leaving enough variation for filtering and peer discussion.
+      const clubs = ["Robotics", "Debate", "Music Tech", "Eco Action", "Sport Science"];
+      const yearGroups = ["Year 12", "Year 13", "Apprentice", "Mixed"];
+      const cycles = ["Cycle 1", "Cycle 2", "Cycle 3", "Cycle 4", "Cycle 5", "Cycle 6"];
+      const rows = [];
+      clubs.forEach((club, clubIndex) => {
+        yearGroups.forEach((yearGroup, yearIndex) => {
+          cycles.forEach((cycle, cycleIndex) => {
+            rows.push({
+              club,
+              year_group: yearGroup,
+              cycle,
+              participation_rate: 46 + clubIndex * 7 + cycleIndex * 2 + yearIndex,
+              confidence_score: 55 + clubIndex * 4 + cycleIndex * 2 - yearIndex,
+              attendance_pct: 74 + clubIndex * 2 + cycleIndex * 1.7 + yearIndex,
+              sessions_attended: 5 + cycleIndex + clubIndex * 0.8,
+              project_score: 57 + clubIndex * 5 + cycleIndex * 2.4 + yearIndex * 1.3
+            });
+          });
+        });
+      });
+      return rows;
+    }
+  </script>
+</body>
+</html>
