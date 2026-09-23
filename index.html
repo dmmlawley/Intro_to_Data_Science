@@ -706,6 +706,9 @@
 
     function normaliseAxisSelection(dataset) {
       const chartType = ui.chartTypeSelect.value;
+      if (chartType === "bar" && ui.xFieldSelect.value !== dataset.categoryField) {
+        setSelectValue(ui.xFieldSelect, dataset.categoryField);
+      }
       if ((chartType === "scatter" || chartType === "histogram") && !isNumericField(dataset, ui.xFieldSelect.value)) {
         setSelectValue(ui.xFieldSelect, dataset.defaultX);
       }
@@ -825,10 +828,11 @@
       const selectedGroup = ui.filterSelect.value;
       const thresholdField = dataset.thresholdField;
       const threshold = ui.rangeInput.value;
-      const summaryField = chartType === "histogram" ? xField : yField;
+      const safeYField = chartType === "bar" && !isNumericField(dataset, yField) ? dataset.defaultY : yField;
+      const summaryField = chartType === "histogram" ? xField : safeYField;
       const safeSummaryField = isNumericField(dataset, summaryField) ? summaryField : dataset.defaultY;
       const chartLine = chartType === "bar"
-        ? `sns.barplot(data=filtered, x="${xField}", y="${yField}", estimator=np.mean)`
+        ? `sns.barplot(data=filtered, x="${dataset.categoryField}", y="${safeYField}", estimator=np.mean)`
         : chartType === "histogram"
           ? `sns.histplot(data=filtered, x="${xField}", bins=8)`
           : `sns.scatterplot(data=filtered, x="${xField}", y="${yField}", hue="${dataset.groupField}")`;
@@ -1024,7 +1028,7 @@
       }
       const width = 720;
       const height = 360;
-      const padding = { top: 24, right: 24, bottom: 92, left: 54 };
+      const padding = { top: 24, right: 24, bottom: 108, left: 54 };
       const chartWidth = width - padding.left - padding.right;
       const chartHeight = height - padding.top - padding.bottom;
       const maxValue = Math.max(...values, 1);
@@ -1038,7 +1042,7 @@
         return `
           <rect class="chart-bar" x="${x}" y="${y}" width="${barWidth}" height="${scaledHeight}" rx="8" />
           <text class="chart-value" x="${x + barWidth / 2}" y="${y - 8}" text-anchor="middle">${value.toFixed(1)}</text>
-          <text class="chart-label" x="${x + barWidth / 2}" y="${height - 44}" text-anchor="middle">${escapeHtml(label)}</text>
+          <text class="chart-label" x="${x + barWidth / 2}" y="${height - 40}" text-anchor="end" transform="rotate(-30 ${x + barWidth / 2} ${height - 40})">${escapeHtml(label)}</text>
         `;
       }).join("");
       const detail = labels.map((label, index) => `${label}: ${values[index].toFixed(1)}`).join("; ");
