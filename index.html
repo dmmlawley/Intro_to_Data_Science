@@ -665,9 +665,12 @@
       }
 
       const focusValues = rows.map(row => Number(row[focusField])).filter(Number.isFinite);
-      const comparisonValues = rows.map(row => Number(row[comparisonField])).filter(Number.isFinite);
+      const pairs = numericPairs(rows, comparisonField, focusField);
       const correlation = isNumericField(dataset, focusField) && isNumericField(dataset, comparisonField)
-        ? correlationCoefficient(comparisonValues, focusValues)
+        ? correlationCoefficient(
+            pairs.map(pair => pair.x),
+            pairs.map(pair => pair.y)
+          )
         : null;
       const cards = [
         summaryCard("Rows remaining", rows.length, `${dataset.rows.length} in full dataset`),
@@ -683,6 +686,7 @@
       const context = document.getElementById("chartCanvas");
       if (chart) {
         chart.destroy();
+        chart = null;
       }
 
       if (!rows.length) {
@@ -748,10 +752,13 @@
       }
 
       const yValues = rows.map(row => Number(row[yField])).filter(Number.isFinite);
-      const xValues = rows.map(row => Number(row[xField])).filter(Number.isFinite);
+      const pairs = numericPairs(rows, xField, yField);
       const topGroup = topAverageGroup(rows, dataset.categoryField, yField);
       const corr = isNumericField(dataset, xField) && isNumericField(dataset, yField)
-        ? correlationCoefficient(xValues, yValues)
+        ? correlationCoefficient(
+            pairs.map(pair => pair.x),
+            pairs.map(pair => pair.y)
+          )
         : null;
 
       ui.findingText.textContent = `${question.label} In the current view, ${topGroup.label} has the strongest average ${prettyLabel(yField)} at ${topGroup.value.toFixed(1)}. ${corr === null ? "Use the table to compare categories." : `The current linear relationship is ${corr.toFixed(2)}, so pupils should discuss whether that feels weak, moderate or strong.`}`;
@@ -929,6 +936,17 @@
       }
       const denominator = Math.sqrt(xSpread * ySpread);
       return denominator ? numerator / denominator : null;
+    }
+
+    function numericPairs(rows, xField, yField) {
+      return rows.reduce((pairs, row) => {
+        const x = Number(row[xField]);
+        const y = Number(row[yField]);
+        if (Number.isFinite(x) && Number.isFinite(y)) {
+          pairs.push({ x, y });
+        }
+        return pairs;
+      }, []);
     }
 
     function isNumericField(dataset, field) {

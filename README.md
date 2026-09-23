@@ -34,10 +34,10 @@ These can be replaced later with teacher-supplied CSV datasets that follow a sim
 No build step is required.
 
 ### Option 1: open directly
-Open `/home/runner/work/Intro_to_Data_Science/Intro_to_Data_Science/index.html` in a browser.
+Open `index.html` from the repository folder in a browser.
 
 ### Option 2: serve locally
-From `/home/runner/work/Intro_to_Data_Science/Intro_to_Data_Science` run:
+From the repository root run:
 
 ```bash
 python -m http.server 8000
