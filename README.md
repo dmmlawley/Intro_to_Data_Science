@@ -28,7 +28,7 @@ The app includes three built-in classroom-friendly datasets:
 - town transport and air quality
 - student clubs, confidence and project success
 
-These can be replaced later with teacher-supplied CSV datasets that follow a similar structure.
+These built-in datasets are generated directly inside `index.html`. A later extension could swap that generated data for teacher-supplied CSV files.
 
 ## Running the app
 No build step is required.
