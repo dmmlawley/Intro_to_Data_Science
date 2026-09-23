@@ -415,7 +415,7 @@
           <div class="panel panel-tight mt-1">
             <h3>Chart and interpretation</h3>
             <div class="chart-shell">
-              <div id="chartCanvas" aria-live="polite"></div>
+              <div id="chartCanvas" role="img" aria-label="Interactive chart output" aria-live="polite"></div>
             </div>
             <p id="chartNote" class="chart-note"></p>
           </div>
@@ -720,6 +720,7 @@
 
       const focusValues = rows.map(row => Number(row[focusField])).filter(Number.isFinite);
       const pairs = numericPairs(rows, comparisonField, focusField);
+      const hasFocusValues = focusValues.length > 0;
       const correlation = isNumericField(dataset, focusField) && isNumericField(dataset, comparisonField)
         ? correlationCoefficient(
             pairs.map(pair => pair.x),
@@ -728,9 +729,9 @@
         : null;
       const cards = [
         summaryCard("Rows remaining", rows.length, `${dataset.rows.length} in full dataset`),
-        summaryCard(`Mean ${prettyLabel(focusField)}`, average(focusValues).toFixed(1), "Useful for first conclusions"),
-        summaryCard(`Median ${prettyLabel(focusField)}`, median(focusValues).toFixed(1), "Less affected by extreme values"),
-        summaryCard(`Highest ${prettyLabel(focusField)}`, Math.max(...focusValues).toFixed(1), "Look back at the table for this case"),
+        summaryCard(`Mean ${prettyLabel(focusField)}`, hasFocusValues ? average(focusValues).toFixed(1) : "N/A", hasFocusValues ? "Useful for first conclusions" : "Choose a numeric focus field"),
+        summaryCard(`Median ${prettyLabel(focusField)}`, hasFocusValues ? median(focusValues).toFixed(1) : "N/A", hasFocusValues ? "Less affected by extreme values" : "Choose a numeric focus field"),
+        summaryCard(`Highest ${prettyLabel(focusField)}`, hasFocusValues ? Math.max(...focusValues).toFixed(1) : "N/A", hasFocusValues ? "Look back at the table for this case" : "Choose a numeric focus field"),
         summaryCard("Correlation", correlation === null ? "N/A" : correlation.toFixed(2), correlation === null ? "Choose two numeric fields to compare" : "Closer to ±1 suggests a stronger linear pattern")
       ];
       ui.summaryGrid.innerHTML = cards.join("");
@@ -767,9 +768,9 @@
         return;
       }
 
-      const yValues = rows.map(row => Number(row[yField])).filter(Number.isFinite);
       const pairs = numericPairs(rows, xField, yField);
-      const topGroup = topAverageGroup(rows, dataset.categoryField, yField);
+      const yIsNumeric = isNumericField(dataset, yField);
+      const topGroup = yIsNumeric ? topAverageGroup(rows, dataset.categoryField, yField) : null;
       const corr = isNumericField(dataset, xField) && isNumericField(dataset, yField)
         ? correlationCoefficient(
             pairs.map(pair => pair.x),
@@ -777,7 +778,9 @@
           )
         : null;
 
-      ui.findingText.textContent = `${question.label} In the current view, ${topGroup.label} has the strongest average ${prettyLabel(yField)} at ${topGroup.value.toFixed(1)}. ${corr === null ? "Use the table to compare categories." : `The current linear relationship is ${corr.toFixed(2)}, so pupils should discuss whether that feels weak, moderate or strong.`}`;
+      ui.findingText.textContent = yIsNumeric
+        ? `${question.label} In the current view, ${topGroup.label} has the strongest average ${prettyLabel(yField)} at ${topGroup.value.toFixed(1)}. ${corr === null ? "Use the table to compare categories." : `The current linear relationship is ${corr.toFixed(2)}, so pupils should discuss whether that feels weak, moderate or strong.`}`
+        : `${question.label} The current Y-axis field is categorical, so pupils should compare categories through counts and the filtered table rather than averages.`;
       ui.comparisonText.textContent = `Students can get this answer by filtering ${rows.length} rows and scanning the table, then compare that with the Pandas code below. This makes the efficiency gain of code-driven analysis visible without making coding the first barrier.`;
       ui.misleadingText.textContent = misleadingPrompt(chartType, xField, yField);
     }
@@ -810,7 +813,7 @@
       const thresholdField = dataset.thresholdField;
       const threshold = ui.rangeInput.value;
       const chartLine = chartType === "bar"
-        ? `sns.barplot(data=filtered, x="${xField}", y="${yField}", estimator=mean)`
+        ? `sns.barplot(data=filtered, x="${xField}", y="${yField}", estimator=np.mean)`
         : chartType === "histogram"
           ? `sns.histplot(data=filtered, x="${xField}", bins=8)`
           : `sns.scatterplot(data=filtered, x="${xField}", y="${yField}", hue="${dataset.groupField}")`;
@@ -818,7 +821,7 @@
         ? `filtered = df[df["${thresholdField}"] >= ${threshold}]`
         : `filtered = df[(df["${dataset.groupField}"] == "${selectedGroup}") & (df["${thresholdField}"] >= ${threshold})]`;
 
-      ui.pythonCode.textContent = `from statistics import mean\nimport pandas as pd\nimport seaborn as sns\nimport matplotlib.pyplot as plt\n\n# Challenge question\n# ${question.label}\n\ndf = pd.read_csv("${ui.datasetSelect.value}.csv")\n${filterLine}\n\nsummary = filtered["${yField}"].describe()\nsorted_rows = filtered.sort_values("${ui.sortSelect.value}", ascending=False).head(12)\n\nprint(summary)\nprint(sorted_rows)\n\nplt.figure(figsize=(10, 6))\n${chartLine}\nplt.title("${dataset.name}")\nplt.tight_layout()\nplt.show()`;
+      ui.pythonCode.textContent = `import numpy as np\nimport pandas as pd\nimport seaborn as sns\nimport matplotlib.pyplot as plt\n\n# Challenge question\n# ${question.label}\n\ndf = pd.read_csv("${ui.datasetSelect.value}.csv")\n${filterLine}\n\nsummary = filtered["${yField}"].describe()\nsorted_rows = filtered.sort_values("${ui.sortSelect.value}", ascending=False).head(12)\n\nprint(summary)\nprint(sorted_rows)\n\nplt.figure(figsize=(10, 6))\n${chartLine}\nplt.title("${dataset.name}")\nplt.tight_layout()\nplt.show()`;
     }
 
     function currentDataset() {
