@@ -415,7 +415,7 @@
           <div class="panel panel-tight mt-1">
             <h3>Chart and interpretation</h3>
             <div class="chart-shell">
-              <div id="chartCanvas" role="img" aria-label="Interactive chart output" aria-live="polite"></div>
+              <div id="chartCanvas" aria-live="polite" aria-atomic="true"></div>
             </div>
             <p id="chartNote" class="chart-note"></p>
           </div>
@@ -770,7 +770,6 @@
 
       const pairs = numericPairs(rows, xField, yField);
       const yIsNumeric = isNumericField(dataset, yField);
-      const topGroup = yIsNumeric ? topAverageGroup(rows, dataset.categoryField, yField) : null;
       const corr = isNumericField(dataset, xField) && isNumericField(dataset, yField)
         ? correlationCoefficient(
             pairs.map(pair => pair.x),
@@ -778,9 +777,7 @@
           )
         : null;
 
-      ui.findingText.textContent = yIsNumeric
-        ? `${question.label} In the current view, ${topGroup.label} has the strongest average ${prettyLabel(yField)} at ${topGroup.value.toFixed(1)}. ${corr === null ? "Use the table to compare categories." : `The current linear relationship is ${corr.toFixed(2)}, so pupils should discuss whether that feels weak, moderate or strong.`}`
-        : `${question.label} The current Y-axis field is categorical, so pupils should compare categories through counts and the filtered table rather than averages.`;
+      ui.findingText.textContent = buildFindingText(rows, chartType, xField, yField, corr, yIsNumeric);
       ui.comparisonText.textContent = `Students can get this answer by filtering ${rows.length} rows and scanning the table, then compare that with the Pandas code below. This makes the efficiency gain of code-driven analysis visible without making coding the first barrier.`;
       ui.misleadingText.textContent = misleadingPrompt(chartType, xField, yField);
     }
@@ -812,6 +809,8 @@
       const selectedGroup = ui.filterSelect.value;
       const thresholdField = dataset.thresholdField;
       const threshold = ui.rangeInput.value;
+      const summaryField = chartType === "histogram" ? xField : yField;
+      const safeSummaryField = isNumericField(dataset, summaryField) ? summaryField : dataset.defaultY;
       const chartLine = chartType === "bar"
         ? `sns.barplot(data=filtered, x="${xField}", y="${yField}", estimator=np.mean)`
         : chartType === "histogram"
@@ -821,7 +820,7 @@
         ? `filtered = df[df["${thresholdField}"] >= ${threshold}]`
         : `filtered = df[(df["${dataset.groupField}"] == "${selectedGroup}") & (df["${thresholdField}"] >= ${threshold})]`;
 
-      ui.pythonCode.textContent = `import numpy as np\nimport pandas as pd\nimport seaborn as sns\nimport matplotlib.pyplot as plt\n\n# Challenge question\n# ${question.label}\n\ndf = pd.read_csv("${ui.datasetSelect.value}.csv")\n${filterLine}\n\nsummary = filtered["${yField}"].describe()\nsorted_rows = filtered.sort_values("${ui.sortSelect.value}", ascending=False).head(12)\n\nprint(summary)\nprint(sorted_rows)\n\nplt.figure(figsize=(10, 6))\n${chartLine}\nplt.title("${dataset.name}")\nplt.tight_layout()\nplt.show()`;
+      ui.pythonCode.textContent = `import numpy as np\nimport pandas as pd\nimport seaborn as sns\nimport matplotlib.pyplot as plt\n\n# Challenge question\n# ${question.label}\n\ndf = pd.read_csv("${ui.datasetSelect.value}.csv")\n${filterLine}\n\nsummary = filtered["${safeSummaryField}"].describe()\nsorted_rows = filtered.sort_values("${ui.sortSelect.value}", ascending=False).head(12)\n\nprint(summary)\nprint(sorted_rows)\n\nplt.figure(figsize=(10, 6))\n${chartLine}\nplt.title("${dataset.name}")\nplt.tight_layout()\nplt.show()`;
     }
 
     function currentDataset() {
@@ -893,6 +892,25 @@
       const grouped = groupMeans(rows, field, valueField);
       const pairs = grouped.labels.map((label, index) => ({ label, value: grouped.values[index] }));
       return pairs.sort((a, b) => b.value - a.value)[0] || { label: "No group", value: 0 };
+    }
+
+    function buildFindingText(rows, chartType, xField, yField, correlation, yIsNumeric) {
+      if (!yIsNumeric) {
+        return `The current Y-axis field is categorical, so pupils should compare categories through counts and the filtered table rather than averages.`;
+      }
+      if (chartType === "bar") {
+        const topGroup = topAverageGroup(rows, xField, yField);
+        return `${topGroup.label} has the strongest average ${prettyLabel(yField)} at ${topGroup.value.toFixed(1)} in the current filtered view.`;
+      }
+      if (chartType === "histogram") {
+        const bins = histogramBins(rows.map(row => Number(row[xField])).filter(Number.isFinite));
+        const topBinIndex = bins.values.indexOf(Math.max(...bins.values));
+        return `${prettyLabel(xField)} clusters most heavily in the ${bins.labels[topBinIndex]} range, so pupils should test whether that concentration changes after filtering.`;
+      }
+      if (correlation === null) {
+        return `Use the filtered scatter plot and table to compare ${prettyLabel(xField)} with ${prettyLabel(yField)} across individual rows.`;
+      }
+      return `The current scatter plot shows a correlation of ${correlation.toFixed(2)} between ${prettyLabel(xField)} and ${prettyLabel(yField)}. Pupils should decide whether that looks weak, moderate, or strong and whether another factor might explain it.`;
     }
 
     function prettyLabel(value) {
